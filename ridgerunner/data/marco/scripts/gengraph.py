@@ -123,17 +123,6 @@ def run_ops(pos, ops, blocksize):
     pad_path(ops_path, pos, ry + 5, 0)
   return ops_path,pos, pins
 
-def rotate(v, angle, anchor=(0,0)):
-  x,y = v
-  x -= anchor[0]
-  y -= anchor[1]
-  cos_t = np.cos(angle)
-  sin_t = np.sin(angle)
-
-  nx = x * cos_t - y * sin_t
-  ny = x * sin_t + y * cos_t
-  return (nx + anchor[0], ny + anchor[1])
-
 linepaths = []
 pins = {}
 
