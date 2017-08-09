@@ -1,0 +1,10 @@
+*
+!.gitignore
+!*/
+!ridgerunner/data/marco/*
+!*.cpp
+!*.c
+!*.cc
+!*.h
+!*.hpp
+!*.py
