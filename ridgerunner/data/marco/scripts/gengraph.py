@@ -105,7 +105,7 @@ def run_ops(pos, ops, blocksize):
   ops_path = []
   
   if pos == 1 or pos == 2:
-    pad_path(ops_path, pos, ry - 5, 0)
+    pad_path(ops_path, pos, ry - 7, 0)
   pad_path(ops_path, pos, ry, 0)
 
   for op in ops:
@@ -120,7 +120,7 @@ def run_ops(pos, ops, blocksize):
       assert 0, 'unknown OP ' + op
 
   if pos == 1 or pos == 2:
-    pad_path(ops_path, pos, ry + 5, 0)
+    pad_path(ops_path, pos, ry + 7, 0)
   return ops_path,pos, pins
 
 linepaths = []
@@ -145,7 +145,7 @@ for i in range(num_types):
   if len(pattern) > maxopsl:
     maxopsl = len(pattern)
 
-gridsize = maxopsl * OPS_YSHIFT * 2 * 2.1
+gridsize = maxopsl * OPS_YSHIFT * 2 * 1.5
 
 #startingtrans = {(1, 0): ((1, 1), 1)}
 #startingtrans = {(3, 9): ((3, 10), 0)}
