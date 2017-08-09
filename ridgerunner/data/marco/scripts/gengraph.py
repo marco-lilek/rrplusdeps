@@ -1,3 +1,4 @@
+from util import *
 from pprint import pprint
 import numpy as np
 import sys
@@ -11,7 +12,6 @@ def get_basename(filename):
   return filename[:doti]
 
 def read_infile(filename):
-
   infile = open(filename, 'r')
   _, num_starting = infile.readline().split(' ')
   num_starting = int(num_starting)
@@ -133,6 +133,7 @@ maxopsl = 0
 assert len(sys.argv) > 2, 'need at least 1 pattern'
 
 ops_paths = []
+print num_types
 for i in range(num_types):
   if len(sys.argv) == 3:
     pattern = sys.argv[2]
@@ -193,9 +194,10 @@ for sx,sy in startingtrans:
 
       line_path += ops_path
       pos = ops_paths[typemap[(x,y)]][pos][1]
+      print 'sdf'
+      pins[(x,y)] = []
       for pinpath in ops_paths[typemap[(x,y)]][pos][2]:
-        print pinpath
-        pins[(x,y)] = [(lambda tx, ty, tz: (rotate((tx + gx, ty + gy), rot[(x,y)], (gx,gy))) + (tz,))(*t) for t in pinpath]
+        pins[(x,y)].append([(lambda tx, ty, tz: (rotate((tx + gx, ty + gy), rot[(x,y)], (gx,gy))) + (tz,))(*t) for t in pinpath])
       dpath.append((x,y))
 
       lmove = adj[(x,y)][0]
@@ -218,21 +220,27 @@ for sx,sy in startingtrans:
     linepaths.append(line_path)
 
 print 'done'
-pins = [pins[k] for k in pins]
+
+flattened_pins = []
+for t in pins:
+  for e in pins[t]:
+    flattened_pins.append(e)
+
+#pins = [pins[k] for k in pins]
 
 outfile = open(get_basename(sys.argv[1]) + '.vect', "w")
 outfile.write("VECT\n")
 
 # header info
 outfile.write('{} {} {}\n'.format(
-  len(linepaths) + len(pins), 
-  sum([len(x) for x in linepaths]) + sum([len(x) for x in pins]),
-  len(linepaths) + (len(pins) if len(pins) > 0 else 0)))
+  len(linepaths) + len(flattened_pins), 
+  sum([len(x) for x in linepaths]) + sum([len(x) for x in flattened_pins]),
+  len(linepaths) + (len(flattened_pins) if len(flattened_pins) > 0 else 0)))
 
 for lpath in linepaths:
   outfile.write("{}\n".format(len(lpath)))
 
-for pinpath in pins:
+for pinpath in flattened_pins:
   outfile.write("{}\n".format(len(pinpath)))
 
 #pprint(pins)
@@ -240,8 +248,8 @@ for pinpath in pins:
 for l in range(len(linepaths)):
   outfile.write("1\n")
 
-if len(pins) > 0:
-  for p in range(len(pins)):
+if len(flattened_pins) > 0:
+  for p in range(len(flattened_pins)):
     outfile.write("1\n")
 
 # data entries
@@ -250,7 +258,7 @@ for linepath in linepaths:
   for x,y,z in linepath:
     outfile.write(xyz_format.format(round(x,6),round(y,6),round(z,6)))
 
-for pinpath in pins:
+for pinpath in flattened_pins:
   for x,y,z in pinpath:
     outfile.write(xyz_format.format(round(x,6),round(y,6),round(z,6)))
 
@@ -258,8 +266,8 @@ for l in range(len(linepaths)):
   cintensity = float(l) /len(linepaths)
   outfile.write('{} {} {} {}\n'.format(cintensity,cintensity,1,1))
 
-if len(pins) > 0:
-  for p in range(len(pins)):
+if len(flattened_pins) > 0:
+  for p in range(len(flattened_pins)):
     outfile.write('0 0 0 0\n')
 
 outfile.close()
