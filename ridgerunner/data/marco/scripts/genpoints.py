@@ -24,8 +24,6 @@ def read_infile(filename):
   infile.close()
   return pattern, int(pattern_w), int(pattern_h)
 
-pattern, pattern_w, pattern_h = read_infile(sys.argv[1]) 
-
 def shift(points, sx, sy, pattern_w, pattern_h):
   xd = sx * pattern_w
   yd = sy * pattern_h
@@ -36,6 +34,17 @@ def shift(points, sx, sy, pattern_w, pattern_h):
   a = (xa + xd,ya + yd)
   b = (xb + xd,yb + yd)
   return cur, a, b
+
+def add_line(plt, x1,y1,x2,y2, color, middle_arrow=True, zorder=0):
+  plt.arrow(x1, y1, x2- x1, y2 - y1, shape='full', lw=0.5, color=color, length_includes_head=True,head_width=0 if middle_arrow else 0.1, zorder=zorder)
+  if middle_arrow:
+    plt.arrow(x1, y1, float(x2- x1)/2, float(y2 - y1)/2, shape='full', lw=0.3, color=color, length_includes_head=True,head_width=0.1, zorder=zorder)
+
+def get_basename(filename):
+  doti = filename.rfind('.')
+  return filename[:doti]
+
+pattern, pattern_w, pattern_h = read_infile(sys.argv[1]) 
 
 adj = {}        # (x,y) -> [out left, out right] TO not from
 rot = {}        # (x,y) -> rotation from UP
@@ -146,20 +155,35 @@ for a in pts:
   ys.append(y)
   xl,yl = incoming[a][0]
   xr,yr = incoming[a][1]
-  plt.arrow(xl, yl, x- xl, y - yl, shape='full', lw=0.3, color='g', length_includes_head=True,head_width=.05)
-  plt.arrow(xr, yr, x- xr, y - yr, shape='full', lw=0.3, color='turquoise', length_includes_head=True, head_width=.05)
+  add_line(plt, xl,yl,x,y,'g')
+  add_line(plt, xr,yr,x,y,'turquoise')
 
   #print x,y
   rotx, roty = rotate((x,y+1), rot[a], a)
   #print rotx, roty
-  plt.arrow(x, y, rotx - x, roty - y, shape='full', lw=0.6, color='black', length_includes_head=True, head_width=.05)
+  add_line(plt, x,y,rotx,roty,'black', False)
 
   xl,yl = adj[a][0]
   xr,yr = adj[a][1]
-  plt.arrow(x, y, xl - x, yl - y, shape='full', lw=0.5, color='r', length_includes_head=True,head_width=.05, zorder=10)
-  plt.arrow(x, y, xr - x, yr - y, shape='full', lw=0.5, color='b', length_includes_head=True, head_width=.05, zorder=10)
+
+  add_line(plt, x,y,xl,yl,'r', zorder=10)
+  add_line(plt, x,y,xr,yr,'b', zorder=10)
 
 plt.scatter(xs, ys)
+
+# cleanup typemap for active points (number range only samples from these points)
+typemapmap = {}
+numtypes = 0
+for pt in typemap:
+  if pt in activepts:
+    if typemap[pt] not in typemapmap:
+      typemapmap[typemap[pt]] = numtypes
+      numtypes += 1
+    typemap[pt] = typemapmap[typemap[pt]]
+
+for pt in typemap:
+  if pt in activepts:    
+    plt.text(pt[0], pt[1], typemap[pt], color='#ff00ff', weight='heavy') 
 plt.xticks(range(TILETIMES * pattern_w))
 plt.yticks(range(TILETIMES * pattern_h))
 
@@ -218,10 +242,6 @@ for v in ending_pts:
 
 plt.gca().invert_yaxis()
 
-def get_basename(filename):
-  doti = filename.rfind('.')
-  return filename[:doti]
-
 base_filename = get_basename(sys.argv[1])
 
 plt.savefig(base_filename + '.pattern.png')
@@ -245,11 +265,9 @@ outfile.write('ACTIVE {}\n'.format(len(activepts)))
 nexttype = 0
 typemapmap = {}
 for pt in activepts:
-  if typemap[pt] not in typemapmap:
-    typemapmap[typemap[pt]] = nexttype
-    nexttype += 1
 
-  fout = list(sum([pt, adj[pt][0], adj[pt][1], (typemapmap[typemap[pt]],)], ()))
+  # just numbering it appropriately
+  fout = list(sum([pt, adj[pt][0], adj[pt][1], (typemap[pt],)], ()))
   outfile.write('{} {} {} {} {} {} {}\n'.format(*fout))
 
 outfile.write('ROT {}\n'.format(len(activepts) + len(starting_pts) + len(ending_pts)))
